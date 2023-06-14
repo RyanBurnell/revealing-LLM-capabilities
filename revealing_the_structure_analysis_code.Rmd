@@ -148,7 +148,7 @@ make.heatmap <- function(x, title, xlab, ylab, show.val) {
 
 ```{r cleaning, echo = FALSE}
 #read in data from file. Dataset contains various 
-rawData <- read.csv("helm-data.csv")
+rawData <- read.csv("helm_data.csv")
 
 #Set up lists of core and targeted tasks by extracting first row from df
 tasks = colnames(dplyr::select(rawData, -Model))
@@ -334,7 +334,7 @@ factorScores$Model = includedModels
 #####Correlations between model properties and factor scores on each factor#####
 
 #Read in model properties from csv as a dataframe
-modelProperties = read.csv("modelProperties.csv")
+modelProperties = read.csv("model_properties.csv")
 
 #Clean up column types
 modelProperties$numTokens = as.numeric(modelProperties$numTokens)
