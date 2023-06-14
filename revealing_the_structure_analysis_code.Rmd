@@ -1,0 +1,417 @@
+
+```{r setup, echo = FALSE, warning = FALSE, message = FALSE}
+#Load in libraries
+library(psych)
+library(blavaan)
+library(Rdimtools)
+library(tidyverse)
+library(dplyr)
+
+#Set random seed
+set.seed(42)
+
+```
+
+```{r helperFunctions}
+#Helper function to extract ranks
+convert_numeric_to_ranks <- function(data) {
+  # Get the column names of numeric variables
+  numeric_cols <- sapply(data, is.numeric)
+  
+  # Convert numeric variables to ranks
+  data[numeric_cols] <- lapply(data[numeric_cols], rank,ties.method = "min")
+  
+  # Return the converted data
+  return(data)
+}
+
+#BayesFM doesn't include an easy function to get matrix of factor loadings, so manually modify their plot() function to output the matrix
+getFactorLoadings <- function(x, ...)
+{
+
+  args <- list(...)
+  show.val <- ifelse(is.null(args$show.val), TRUE, args$show.val)
+  what <- ifelse(is.null(args$what), 'maxp', args$what)
+  #assertFlag(show.val)
+  if (!what %in% c('maxp', 'hppm'))
+    stop('plot.befa() only implemented for what = "maxp" and what = "hppm"')
+
+  Kmax <- attr(x, 'Kmax')
+
+  ##############################################################################
+  ### trace of number of factors
+
+  dat <- data.frame(nfac  = factor(x$nfac, levels = 0:Kmax),
+                    iter  = as.numeric(names(x$nfac)),
+                    MHacc = as.numeric(x$MHacc))
+
+  p.nfac <- ggplot(dat, aes_string(x = 'iter', y = 'nfac')) +
+              geom_line(colour = 'steelblue')
+
+  p.nfac <- p.nfac + labs(title = paste0('trace plot of number of factors\n',
+                             '(accepted Metropolis-Hastings draws at bottom)'),
+                         x = 'MCMC iterations',
+                         y = 'number of factors')
+
+  # add Metropolis-Hastings acceptance
+  p.nfac <- p.nfac + geom_rug(aes_string(y = 'MHacc'), sides = 'b',
+                              colour = 'darkcyan')
+
+
+  # posterior probabilities of number of factors
+  nft <- table(factor(x$nfac, levels = 0:Kmax))
+  dat <- data.frame(nfac = as.factor(0:Kmax),
+                    freq = as.numeric(nft / length(x$nfac)))
+  p.hnfac <- ggplot(dat, aes_string(x = 'nfac')) +
+               geom_bar(aes_string(weight = 'freq'), fill = 'steelblue') +
+               labs(title = 'posterior probabilities of number of factors',
+                    x = 'number of factors',
+                    y = 'frequencies')
+
+
+  ##############################################################################
+  # summarize and plot
+
+  x <- summary(x, ...)
+  if (what == 'hppm') {
+    alpha <- x$alpha$m1
+    dedic <- x$alpha$m1$dedic
+    R     <- x$R$m1
+  } else {
+    alpha <- x$alpha
+    dedic <- x$alpha$dedic
+    R     <- x$R
+  }
+  nvar  <- length(dedic)
+
+  ### matrix of indicator probabilities
+
+  if (what != 'hppm') {     # skip for HPP model
+
+    pind <- matrix(NA, nvar, Kmax)
+    rownames(pind) <- sapply(strsplit(rownames(alpha), ':'), '[', 2)
+    colnames(pind) <- paste0('f', 1:Kmax)
+    for (i in 1:nvar)
+      pind[i, dedic[i]] <- alpha$prob[i]
+
+    # which factors are loaded by at least one measurement?
+    acti <- apply(!is.na(pind), 2, any)
+
+    # heatmap for active factors only
+    p.indic <- make.heatmap(pind[, acti],
+                            title = 'indicator probabilities of being nonzero',
+                            xlab = 'latent factors (active factors only)',
+                            ylab = 'manifest variables',
+                            show.val)
+
+  }
+
+  ### matrix of factor loadings
+
+  # construct matrix from factor loadings and indicators
+  # (remove the 'alpha:' part from variable names to simplify plot)
+  alpha.post <- matrix(NA, nvar, Kmax)
+  rownames(alpha.post) <- sapply(strsplit(rownames(alpha), ':'), '[', 2)
+  colnames(alpha.post) <- paste0('f', 1:Kmax)
+  for (i in 1:nvar)
+    alpha.post[i, dedic[i]] <- alpha$mean[i]
+
+  # which factors are loaded by at least one measurement?
+  acti <- !apply(is.na(alpha.post), 2, all)
+
+  # heatmap for active factors only
+  p.alpha <- make.heatmap(alpha.post[, acti],
+                          title = 'factor loading matrix',
+                          xlab = 'latent factors (active factors only)',
+                          ylab = 'manifest variables',
+                          show.val)
+  return (p.alpha)
+}
+
+
+################################################################################
+
+make.heatmap <- function(x, title, xlab, ylab, show.val) {
+
+  # prepare data
+  xcol <- colnames(x)
+  xrow <- rownames(x)
+  dat <- data.frame(xvar = factor(rep(xcol, each = nrow(x)), levels = xcol),
+                    yvar = factor(rep(xrow, ncol(x)), levels = rev(xrow)),
+                    val  = c(round(x, digits = 2)))
+
+  return(dat)
+  
+}
+```
+
+
+```{r cleaning, echo = FALSE}
+#read in data from file. Dataset contains various 
+rawData <- read.csv("helm-data.csv")
+
+#Set up lists of core and targeted tasks by extracting first row from df
+tasks = colnames(dplyr::select(rawData, -Model))
+
+#Now create variables for each of the header task info columns
+taskTypes =dplyr::select(rawData, -"Model")[1,]
+helmClassification =dplyr::select(rawData, -"Model")[2,]
+majorAbility =dplyr::select(rawData, -"Model")[3,]
+taskDescription =dplyr::select(rawData, -"Model")[4,]
+
+taskKeyRaw = rawData[1:4,]
+taskKey = taskKeyRaw[-1] %>% t() %>% as.data.frame()%>% setNames(taskKeyRaw[,1])
+taskKey$task = tasks
+
+cleanData = rawData[-c(1,2,3,4),]
+
+#Format columns properly as factors & numeric
+cleanData$Model = factor(cleanData$Model)
+cleanData = mutate_if(cleanData,is.character, as.numeric)
+
+#Create normalised scaled dataset
+scaledData = cleanData %>% mutate(across(where(is.numeric), scale))
+
+#Reverse code The Pile, ICE, and TwitterAAE because they are based on BPB instead of accuracy
+scaledData$The_Pile_BPB = -scaledData$The_Pile_BPB
+scaledData$ICE_BPB = -scaledData$ICE_BPB
+scaledData$TwitterAAE_BPB = -scaledData$TwitterAAE_BPB
+
+#Create ataset of model ranks
+rankedData = convert_numeric_to_ranks(scaledData)
+
+#Make long form dataset for plotting
+scaledDataLong = pivot_longer(scaledData, -c("Model"), names_to = "Task", values_to = "Accuracy")
+#Fix columns in long dataset
+scaledDataLong$Model = factor(scaledDataLong$Model)
+scaledDataLong$Task = factor(scaledDataLong$Task)
+scaledDataLong$Accuracy = as.numeric(scaledDataLong$Accuracy)
+
+#Make long form rank dataset for plotting & fix columns
+rankedDataLong = pivot_longer(rankedData, -c("Model"), names_to = "Task", values_to = "Rank")
+rankedDataLong$Model = factor(rankedDataLong$Model)
+rankedDataLong$Task = factor(rankedDataLong$Task)
+rankedDataLong$Rank = as.numeric(rankedDataLong$Rank)
+
+#List of tasks to exclude from the analysis
+disqualifiedTasks = c("MS_MARCO_.regular._RR.10", "MS_MARCO_.TREC._NDCG.10", "NaturalQuestions_.open.book._F1", "MATH_.chain.of.thoughts._Equivalent_.chain_of_thought.", "Data_imputation_EM", "Entity_matching_EM")
+
+#Parameter to determine whether cases with large numbers of missing data should be discarded. Cases with more missing data than the limit will not be included
+missingTasksLimit = 5
+missingModelsLimit = 5
+
+#Find models with lots of missing data
+missingModelData = data.frame("Model" = cleanData$Model, "numMissing" = rowSums(is.na(scaledData)))
+
+#Now get list of models with more missing tasks than the limit
+modelsToExclude = filter(missingModelData, numMissing > missingTasksLimit)
+
+#Get rid of those models, store in temp dataset
+tempDataAfterExcludingModels = dplyr::filter(scaledData, !Model %in% modelsToExclude$Model)
+
+#Find tasks with lots of missing data
+missingTaskData = data.frame("Task" = colnames(tempDataAfterExcludingModels),"numMissing" = colSums(is.na(tempDataAfterExcludingModels)))
+
+#Now get list of tasks with more missing models than the limit
+tasksToExclude = filter(missingTaskData, numMissing > missingModelsLimit)
+
+#Now put it together and create dataframe for PCA by getting rid of the tasks with too many missing models
+pcaDF = dplyr::select(tempDataAfterExcludingModels, -tasksToExclude$Task, - all_of(disqualifiedTasks), -Model)
+#Fix columns again to be numeric
+pcaDF = mutate_all(pcaDF, function(x) as.numeric(x))
+
+#Store list of included models for later
+includedModels = tempDataAfterExcludingModels$Model
+
+#Now impute missing values with multiple imputation. Should not be many imputations
+library(mice)
+tempImputation = mice(pcaDF,seed=500)
+pcaDFImputed = complete(tempImputation, 1)
+
+```
+
+
+```{r descriptives, echo = FALSE}
+#Calculate raw correlations between tasks
+taskCorrs = corr.test(pcaDFImputed)
+
+#Get mean & SD of the correlations to get a sense of the positive manifold
+cleanedTaskCorrs = taskCorrs$r[upper.tri(taskCorrs$r, diag = FALSE)] #Get rid of duplicate correlations and identity correlations between the tasks and themselves
+
+#Now get summary statistics about correlation matrix
+describe(cleanedTaskCorrs) 
+
+#Now plot correlations using corrplot
+library(corrplot)
+corrplot(cor(pcaDFImputed), method = "number", type = "lower", 
+title = "Inter-task Correlations", 
+mar = c(0,0,1,0), number.cex = 0.25, number.digits = 2)
+
+#Plot ranks of each model to see how consistent the patterns are
+ranks = dplyr::select(rankedData, -Model)
+
+#Simple plots of performance across tasks for each model (messy)
+ggplot(scaledDataLong, aes(x = Task, y = Accuracy, color = Model, group = Model)) +
+  geom_line(data=scaledDataLong[!is.na(scaledDataLong$Accuracy),]) +
+  scale_size_manual(values = seq(400, 1, length = 38))#+
+
+#Plot of ranked performance (messy)
+ggplot(rankedDataLong, aes(x = Task, y = Rank, color = Model, group = Model)) +
+  geom_line(data=rankedDataLong[!is.na(rankedDataLong$Rank),])
+
+```
+
+
+```{r BayesianFactorAnalysis, echo = FALSE}
+#Load in packages for bayesian EFA
+library(BayesFM)
+library(parameters)
+
+#Conduct bayesian factor analysis, 50000 iterations, factors with min 2 items
+befa <- befa(pcaDFImputed, Nid = 2,  iter = 10000) #Kmax = 6, 
+
+# post process MCMC draws to restore identification
+befa <- post.column.switch(befa)
+befa <- post.sign.switch(befa)
+
+#Summarise and plot results
+summary(befa)#, what = 'maxp')
+#plot(befa) #Uncomment to print plots
+
+#Extract factor loadings for output using custom function
+bayesLoadings = getFactorLoadings(befa, what = 'maxp') #Extract loadings in matrix
+bayesLoadings = pivot_wider(bayesLoadings, id_cols = yvar, names_from = xvar,
+    values_from = val
+  )#Pivot to format to combine with frequentist loadings
+bayesLoadings = rename(bayesLoadings, task = yvar) #Rename yvar to "task"
+```
+
+```{r FrequentistEFA}
+
+# library(psych)
+library(QuantPsyc) #Package for multi.norm function
+library(lavaan) #Package for EFA
+library(EFA.MRFA) #Package for hull efa
+
+#Normality & Skewness checks
+KMO(r=cor(pcaDFImputed))
+mult.norm(pcaDFImputed)
+
+#####Determining number of factors#####
+
+#### Scree plot to visually examine factor structure####
+pca = principal(pcaDFImputed, nfactors = ncol(pcaDFImputed), rotate = "none")
+summary(pca)
+# Plot the scree plot
+plot(pca$values, type = "b", main = "Scree Plot", xlab = "Principal Component", ylab = "Eigenvalue")
+abline(h = 1, col = "red")
+
+#More formal test for how many factors, max set at 6 based on Bayesian results
+hullEFA(pcaDFImputed, index_hull = "RMSEA", maxQ = 6)
+
+#Frequentist EFA assuming 3 factors as determined by the Bayesian analysis & Hull method
+lavaanEFA = lavaan::efa(pcaDFImputed,nfactors = 3, rotation = "oblimin") #Conduct EFA
+summary(lavaanEFA, nd = 3L, cutoff = 0., dot.cutoff = 0.05) #print summary of results
+fitMeasures(lavaanEFA, fit.measures = "all") #Print measures of fit
+
+#Now extract factor loadings to combine with bayesian analysis
+freqLoadings = tibble::rownames_to_column(data.frame(lavaanEFA$loadings), var = "task")
+
+#4 Factor solution as a test to see if results change
+#Frequentist EFA assuming 4 factors
+lavaanEFA4Factor = lavaan::efa(pcaDFImputed,nfactors = 4, rotation = "oblimin", output = "efa")
+summary(lavaanEFA4Factor, nd = 3L, cutoff = 0.0, dot.cutoff = 0.05)
+fitMeasures(lavaanEFA4Factor, fit.measures = "all")
+
+#Now calculate factor scores for each model based on factor analysis results
+factorScores = data.frame(predict(lavaanEFA))
+#Rename factors based on interpretation
+names(factorScores) = c("F1_Comprehension","F2_LanguageModelling","F3_Reasoning")
+factorScores$Model = includedModels
+```
+
+```{r factorScoreCorrelations}
+#####Correlations between model properties and factor scores on each factor#####
+
+#Read in model properties from csv as a dataframe
+modelProperties = read.csv("modelProperties.csv")
+
+#Clean up column types
+modelProperties$numTokens = as.numeric(modelProperties$numTokens)
+modelProperties$releaseDate = as.POSIXct(modelProperties$releaseDate, format="%d/%m/%Y", tz="GMT")
+modelProperties$releaseDate = as.numeric(modelProperties$releaseDate)
+modelPropertyCorrelationsData = inner_join(factorScores, modelProperties, by = "Model")
+
+#Create log variables for model size and num training tokens because of exponential distributions
+modelPropertyCorrelationsData$logModelSize = log(modelPropertyCorrelationsData$modelSize)
+modelPropertyCorrelationsData$logNumTokens = log(modelPropertyCorrelationsData$numTokens)
+
+#Now calculate correlations between all the variables 
+propertyCorrs = corr.test(dplyr::select(modelPropertyCorrelationsData, where(is.numeric)))
+#Print correlations
+print(propertyCorrs, short=FALSE)
+
+#Calculate correlation between mean success and model size
+meanSuccess = rowMeans(dplyr::select(modelPropertyCorrelationsData, where(is.numeric)))
+corr.test(meanSuccess, modelPropertyCorrelationsData$logModelSize)
+
+##### Plots of correlations between model size and each factor #####
+library(ggplot2)
+library(gridExtra)
+library(extrafont)
+
+#Plot for factor 1
+plot1 = ggplot(data = modelPropertyCorrelationsData, aes(x = log(modelSize), y =  F1_Comprehension))+
+  geom_point()  +
+  geom_smooth(method = "lm")+
+  xlab("Log model size")+
+  ylab("Factor 1 score (Comprehension)")+
+  theme_classic() +
+  theme(text=element_text(family="Times New Roman", size=11))
+
+#Plot for factor 2
+plot2 = ggplot(data = modelPropertyCorrelationsData, aes(x = log(modelSize), y =  F2_LanguageModelling))+
+  geom_point()  +
+  geom_smooth(method = "lm")+
+  xlab("Log model size")+
+  ylab("Factor 2 score (Language Modeling)")+
+  theme_classic() +
+  theme(text=element_text(family="Times New Roman", size=11))
+
+#Plot for factor 3
+plot3 = ggplot(data = modelPropertyCorrelationsData, aes(x = log(modelSize), y =  F3_Reasoning))+
+  geom_point()  +
+  geom_smooth(method = "lm")+
+  xlab("Log model size")+
+  ylab("Factor 3 score (Reasoning)")+
+  theme_classic() +
+  theme(text=element_text(family="Times New Roman", size=11))
+
+#Now arrrange plots together horizontally and plot
+grid.arrange(plot1, plot2,plot3, ncol=3)
+
+```
+
+```{r outputResults}
+##### Code for outputing results to csv files
+
+#Combine together task information with frequentist and bayesian results
+loadingsForCSV = inner_join(taskKey, bayesLoadings, by = "task") #First join task info and bayesian
+loadingsForCSV = inner_join(loadingsForCSV, freqLoadings, by = "task") #Now join with frequentist results
+write.csv(loadingsForCSV, "results/combinedLoadings.csv") #Write to csv
+
+write.csv(factorScores, "results/factorScores.csv") #Write factor scores to csv
+
+corrsForCSV = inner_join(loadingsForCSV, corr, by = "task") #Combine inter-task correlations with factor analysis results
+
+write.csv(corrsForCSV, "results/corrs.csv") #Output to separate file
+
+```
+
+
+
+
+
+
+
+

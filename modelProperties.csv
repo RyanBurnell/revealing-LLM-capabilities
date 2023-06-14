@@ -1,0 +1,40 @@
+﻿Model,modelSize,trainingData,family,company,numTokens,releaseDate,InstructionTuning,RLHF,CommonCrawl,Books,Code,Reasoning Problems,The Pile,Wudao,Webtext,Wikipedia,Reddit,News,Roots,Layers,dmodel,Heads
+Anthropic-LM-v4-s3,52000000000,,Anthropic,Anthropic,4.00E+11,01/12/2021,1,1,1,1,0,1,1,0,0,0,0,0,0,64,8192,
+BLOOM,1.76E+11,ROOTS,BLOOM,BigScience,3.66E+11,01/07/2022,0,0,0,0,0,0,0,0,0,0,0,0,1,76,14336,112
+Cohere-Command-beta,52400000000,,Cohere,Cohere,,03/01/2023,1,,,,,,,,,,,,,,,
+Cohere-Command-beta,6100000000,,Cohere,Cohere,,03/01/2023,1,,,,,,,,,,,,,,,
+Cohere-large-v20220720,13100000000,,Cohere,Cohere,,20/07/2022,0,0,,,,,,,,,,,,,,
+Cohere-medium-v20220720,6100000000,,Cohere,Cohere,,20/07/2022,0,0,,,,,,,,,,,,,,
+Cohere-medium-v20221108,6100000000,,Cohere,Cohere,,08/11/2022,0,0,,,,,,,,,,,,,,
+Cohere-small-v20220720,410000000,,Cohere,Cohere,,20/07/2022,0,0,,,,,,,,,,,,,,
+Cohere-xlarge-v20220609,52400000000,,Cohere,Cohere,,09/06/2022,0,0,,,,,,,,,,,,,,
+Cohere-xlarge-v20221108,52400000000,,Cohere,Cohere,,08/11/2022,0,0,,,,,,,,,,,,,,
+GLM,1.30E+11,"The pre-training data includes 1.2T Pile (Gao et al., 2020) English corpus, 1.0T Chinese Wudao- Corpora (Yuan et al., 2021), and 250G Chinese corpora (including online forums, encyclopedia, and QA) we crawl from the web, which form a balanced composition of English and Chinese contents. Also pre-trained on prompsource prompts, DeepStruct prompts, KELM, PropBank",GLM,Tsinghua,4.00E+11,06/10/2022,1,0,0,0,0,0,1,1,,,,,,70,12288,96
+GPT-3-ada,2.70E+09,"Common Crawl (filtered) 410 billion 60% WebText2	19 billion 22% Books1 12 billion 8% Books2 55 billion 8% Wikipedia 3 billion 3%",GPT,OpenAI,3.00E+11,01/05/2020,0,0,1,1,0,0,0,0,1,1,0,0,0,32,2560,32
+GPT-3-babbage,6.70E+09,"Common Crawl (filtered) 410 billion 60% WebText2	19 billion 22% Books1 12 billion 8% Books2 55 billion 8% Wikipedia 3 billion 3%",GPT,OpenAI,3.00E+11,01/05/2020,0,0,1,1,0,0,0,0,1,1,0,0,0,32,4096,32
+GPT-3-curie,1.30E+10,"Common Crawl (filtered) 410 billion 60% WebText2	19 billion 22% Books1 12 billion 8% Books2 55 billion 8% Wikipedia 3 billion 3%",GPT,OpenAI,3.00E+11,01/05/2020,0,0,1,1,0,0,0,0,1,1,0,0,0,40,5140,40
+GPT-3-davinci,1.75E+11,"Common Crawl (filtered) 410 billion 60% WebText2	19 billion 22% Books1 12 billion 8% Books2 55 billion 8% Wikipedia 3 billion 3%",GPT,OpenAI,3.00E+11,01/05/2020,0,0,1,1,0,0,0,0,1,1,0,0,0,96,12288,96
+GPT-code-cushman-001,12000000000,Undisclosed,GPT,OpenAI,,01/08/2021,,,,,,,,,,,,,,,,
+GPT-code-davinci-002,,Undisclosed,GPT,OpenAI,,01/06/2021,,,,,,,,,,,,,,,,
+GPT-J,6000000000,ThePile,GPT,EleutherAI,4.00E+11,04/06/2021,0,0,0,0,0,0,1,1,1,1,0,0,0,28,4096,16
+GPT-NeoX,20000000000,,GPT,EleutherAI,4.00E+11,14/04/2022,0,0,0,0,0,0,1,0,0,0,0,0,0,44,6144,64
+InstructGPT-text-ada-001,2.70E+09,"Common Crawl (filtered) 410 billion 60% WebText2	19 billion 22% Books1 12 billion 8% Books2 55 billion 8% Wikipedia 3 billion 3%",GPT,OpenAI,3.00E+11,27/01/2022,1,1,1,1,0,0,0,0,1,1,0,0,0,32,2560,32
+InstructGPT-text-babbage-001,6.70E+09,"Common Crawl (filtered) 410 billion 60% WebText2	19 billion 22% Books1 12 billion 8% Books2 55 billion 8% Wikipedia 3 billion 3%",GPT,OpenAI,3.00E+11,27/01/2022,1,1,1,1,0,0,0,0,1,1,0,0,0,32,4096,32
+InstructGPT-text-curie-001,1.30E+10,"Common Crawl (filtered) 410 billion 60% WebText2	19 billion 22% Books1 12 billion 8% Books2 55 billion 8% Wikipedia 3 billion 3%",GPT,OpenAI,3.00E+11,27/01/2022,1,1,1,1,0,0,0,0,1,1,0,0,0,40,5140,40
+InstructGPT-text-davinci-002,1.75E+11,"Common Crawl (filtered) 410 billion 60% WebText2	19 billion 22% Books1 12 billion 8% Books2 55 billion 8% Wikipedia 3 billion 3%",GPT,OpenAI,3.00E+11,27/01/2022,1,1,1,1,0,0,0,0,1,1,0,0,0,96,12288,96
+InstructGPT-text-davinci-003,1.75E+11,"Common Crawl (filtered) 410 billion 60% WebText2	19 billion 22% Books1 12 billion 8% Books2 55 billion 8% Wikipedia 3 billion 3%",GPT,OpenAI,3.00E+11,28/11/2022,1,1,1,1,0,0,0,0,1,1,0,0,0,96,12288,96
+J1-Grande-v1,17000000000,Undisclosed - appears to be based on common crawl,J,AI21 Labs,,01/08/2021,0,0,1,0,0,0,0,0,0,0,0,0,0,,,
+J1-Grande-v2-beta,17000000000,Undisclosed - appears to be based on common crawl,J,AI21 Labs,,01/08/2021,0,0,1,0,0,0,0,0,0,0,0,0,0,,,
+J1-Jumbo-v1,1.78E+11,Undisclosed - appears to be based on common crawl,J,AI21 Labs,3.00E+11,01/08/2021,0,0,1,0,0,0,0,0,0,0,0,0,0,76,13824,144
+J1-Large-v1,7500000000,Undisclosed - appears to be based on common crawl,J,AI21 Labs,3.00E+11,01/08/2021,0,0,1,0,0,0,0,0,0,0,0,0,0,32,4096,128
+Luminous-Base,13000000000,Undisclosed - appears to be based on common crawl,Luminous,Aleph Alpha,4.00E+11,15/08/2022,0,0,,,,,,,,,,,,,,
+Luminous-Extended,30000000000,Undisclosed - appears to be based on common crawl,Luminous,Aleph Alpha,,01/04/2022,0,0,,,,,,,,,,,,,,
+Luminous-Supreme,70000000000,Undisclosed - appears to be based on common crawl,Luminous,Aleph Alpha,5.88E+11,01/04/2022,0,0,,,,,,,,,,,,,,
+OPT-175B,1.75E+11,The Pile and PushShift,OPT,Meta,1.80E+11,22/12/2022,0,0,0,0,0,0,1,0,0,0,1,0,0,96,12288,96
+OPT-6.7B,66000000000,The Pile and PushShift,OPT,Meta,1.80E+11,22/12/2022,0,0,0,0,0,0,1,0,0,0,1,0,0,64,9216,72
+T0pp,11000000000,"C4, a cleaned version of CommonCrawl, SuperGLUE, GPT3's evaluation datasets",T0pp,BigScience,1.10E+12,15/10/2021,1,0,1,0,0,1,0,0,0,0,0,0,0,12,768,12
+T5,11000000000,"C4, a cleaned version of CommonCrawl",T5,Google,1.00E+12,01/01/2020,0,0,1,0,0,0,0,0,0,0,0,0,0,24,1024,128
+TNLG-v2-530B,5.30E+11,"11 parts of The Pile dataset, followed by two Common Crawl snapshots, RealNews, and CC-Stories datasets",TNG,Microsoft-NVIDIA,3.39E+11,28/01/2022,0,0,1,0,0,0,1,0,0,0,0,1,0,105,20480,128
+TNLG-v2-6.7B,6700000000,"11 parts of The Pile dataset, followed by two Common Crawl snapshots, RealNews, and CC-Stories datasets",TNG,Microsoft-NVIDIA,3.39E+11,28/01/2022,0,0,1,0,0,0,1,0,0,0,0,1,0,32,4096,32
+UL2,20000000000,C4 Corpus,UL2,Google,1.00E+12,28/02/2023,0,0,1,0,0,0,0,0,0,0,0,0,0,64,4096,16
+YaLM,1.00E+11,"undisclosed data across both English and Russian comprised of both the Pile (Gao et al., 2021a) and several Russian corpora (predominantly derived from the Yandex Search index) ",YaLM,Yandex,3.00E+11,23/06/2022,0,0,0,0,0,0,1,0,0,0,0,0,0,84,,
